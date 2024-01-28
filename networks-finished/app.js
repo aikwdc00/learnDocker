@@ -68,6 +68,9 @@ app.get('/people', async (req, res) => {
 });
 
 mongoose.connect(
+  // mongodb:27017 的mongodb 是docker-compose.yml裡面的service name, 
+  // 27017 是mongodb的port, swfavorites 是database name
+  // 這邊的mongodb:27017 會對應到docker-compose.yml裡面的mongodb:27017
   'mongodb://mongodb:27017/swfavorites',
   { useNewUrlParser: true },
   (err) => {
