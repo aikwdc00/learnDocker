@@ -1,43 +1,56 @@
-version: "3.8"
-services:
-  mongodb:
+# 解釋以下每一條指令
+# FROM node:12.18.3-alpine3.12, 以node:12.18.3-alpine3.12為基底, 這是一個輕量的linux作業系統, 並且安裝了nodejs
+# WORKDIR /app, 指定工作目錄為/app, 這個目錄會在容器內建立, 如果沒有這個目錄, 會自動建立, 並且切換到這個目錄
+# COPY package.json package-lock.json /app/, 將package.json和package-lock.json複製到/app/目錄下
+# RUN npm install, 執行npm install, 這個指令會讀取package.json和package-lock.json, 並且安裝相依套件
+# COPY . /app/, 將所有檔案複製到/app/目錄下
+# CMD ["npm", "start"], 執行npm start, 這個指令會執行package.json中的start指令, 這個指令會執行node index.js
+version: "3.8" # 指定docker-compose版本
+services: # 定義服務, 這裡定義了三個服務, mongodb, backend, frontend, 這三個服務會建立三個容器, 並且互相連接, 這裡的連接是透過網路連接, 這三個容器會建立在同一個網路中, 這個網路會自動建立, 並且會自動連接
+  mongodb: # 定義mongodb服務, 這個服務會建立一個容器, 並且安裝mongodb, 這個容器會建立在同一個網路中, 這個網路會自動建立, 並且會自動連接
     image: 'mongo'
     volumes: 
       - data:/data/db
+    # container_name: mongodb # 定義容器名稱, 這裡定義了mongodb, 這個容器會建立在同一個網路中, 這個網路會自動建立, 並且會自動連接
     # environment: 
     #   MONGO_INITDB_ROOT_USERNAME: max
     #   MONGO_INITDB_ROOT_PASSWORD: secret
       # - MONGO_INITDB_ROOT_USERNAME=max
-    env_file: 
+    env_file:  # 讀取環境變數檔案, 這裡讀取了env/mongo.env, 這個檔案會定義環境變數, 這裡定義了MONGO_INITDB_ROOT_USERNAME和MONGO_INITDB_ROOT_PASSWORD
       - ./env/mongo.env
-  backend:
-    build: ./backend
+    # network:
+    #  - goal-network
+  backend: # 定義backend服務, 這個服務會建立一個容器, 並且安裝相依套件, 並且執行npm start, 這個指令會執行node index.js, 這個容器會建立在同一個網路中, 這個網路會自動建立, 並且會自動連接
+    build: ./backend # 指定Dockerfile所在的目錄, 這裡指定了./backend, 這個目錄下有一個Dockerfile, 這個Dockerfile會建立一個容器, 並且安裝相依套件, 並且執行npm start, 這個指令會執行node index.js
     # build:
-    #   context: ./backend
-    #   dockerfile: Dockerfile
+    #   context: ./backend # 指定Dockerfile所在的目錄, 這裡指定了./backend, 這個目錄下有一個Dockerfile, 這個Dockerfile會建立一個容器, 並且安裝相依套件, 並且執行npm start, 這個指令會執行node index.js
+    #   dockerfile: Dockerfile # 指定Dockerfile檔案, 這裡指定了Dockerfile, 這個檔案會建立一個容器, 並且安裝相依套件, 並且執行npm start, 這個指令會執行node index.js
     #   args:
     #     some-arg: 1
     ports:
-      - '80:80'
+      - '80:80' # 將容器的80 port對應到主機的80 port, 這樣就可以透過網路連接到容器的80 port, 對應app.listen(80)這個指令
+      # 第一個80是主機的port, 第二個80是容器的port
     volumes: 
-      - logs:/app/logs
-      - ./backend:/app
-      - /app/node_modules
+      - logs:/app/logs # 將主機的logs目錄對應到容器的/app/logs目錄, 這樣就可以在主機上編輯檔案, 並且在容器中執行, 這個指令會將主機的logs目錄複製到容器的/app/logs目錄下
+      - ./backend:/app # 將主機的./backend目錄對應到容器的/app目錄, 這樣就可以在主機上編輯檔案, 並且在容器中執行, 這個指令會將主機的./backend目錄複製到容器的/app目錄下
+      - /app/node_modules # 將容器的/app/node_modules目錄對應到主機的/app/node_modules目錄, 這樣就可以在主機上編輯檔案, 並且在容器中執行, 這個指令會將容器的/app/node_modules目錄複製到主機的/app/node_modules目錄下
+    # container_name: backend # 定義容器名稱, 這裡定義了backend, 這個容器會建立在同一個網路中, 這個網路會自動建立, 並且會自動連接
     env_file: 
       - ./env/backend.env
-    depends_on:
+    depends_on: # 定義依賴, 這裡定義了backend服務依賴mongodb服務, 這樣就可以在backend服務中連接mongodb服務, 這裡的連接是透過網路連接, 這兩個服務會建立在同一個網路中, 這個網路會自動建立, 並且會自動連接
       - mongodb
-  frontend:
-    build: ./frontend
+  frontend: # 定義frontend服務, 這個服務會建立一個容器, 並且安裝相依套件, 並且執行npm start, 這個指令會執行node index.js, 這個容器會建立在同一個網路中, 這個網路會自動建立, 並且會自動連接
+    build: ./frontend # 指定Dockerfile所在的目錄, 這裡指定了./frontend, 這個目錄下有一個Dockerfile, 這個Dockerfile會建立一個容器, 並且安裝相依套件, 並且執行npm start, 這個指令會執行node index.js
     ports: 
       - '3000:3000'
     volumes: 
       - ./frontend/src:/app/src
-    stdin_open: true
-    tty: true
+    # container_name: frontend # 定義容器名稱, 這裡定義了frontend, 這個容器會建立在同一個網路中, 這個網路會自動建立, 並且會自動連接
+    stdin_open: true # 開啟stdin, 這樣就可以在容器中輸入資料
+    tty: true # 開啟tty, 這樣就可以在容器中輸入資料, 這個指令會開啟stdin, 這樣就可以在容器中輸入資料
     depends_on: 
       - backend
 
-volumes: 
-  data:
-  logs:
+volumes: # 定義卷, 這裡定義了兩個卷, data和logs, 這兩個卷會建立在docker-compose.yml所在的目錄下, 這兩個卷會在容器中建立, 並且會自動連接到容器中的目錄
+  data: # 定義data卷, 這個卷會建立在docker-compose.yml所在的目錄下, 這個卷會在容器中建立, 並且會自動連接到容器中的目錄
+  logs: # 定義logs卷, 這個卷會建立在docker-compose.yml所在的目錄下, 這個卷會在容器中建立, 並且會自動連接到容器中的目錄
